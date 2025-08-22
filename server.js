@@ -108,9 +108,52 @@ app.post("/chat", async (req, res) => {
           **Strictly follow these rules for using the tool:**
           1.  NEVER use the tool unless the user has first provided their email address.
           2.  NEVER use the tool unless the user has *explicitly* asked for an email or confirmed they want to be contacted.
-          
+
           If these two conditions are met, call the tool. After the tool runs, your job is to confirm the action to the user and ask how else you can help.
-          If the conditions are NOT met, simply continue the conversation.`
+          If the conditions are NOT met, simply continue the conversation.
+
+           **USER EMAIL TEMPLATE RULES:**
+          When you generate the 'clientMessage' for the tool, you MUST follow this structure exactly:
+
+          Hi [User's Name],
+
+          Thank you for your recent chat with me (Macda), our AI assistant at Indocs Media. We appreciate you reaching out to us.
+
+          Based on your conversation, here is the information you requested regarding [Topic of User's Request]:
+
+          > [Your detailed, AI-generated answer to the user's specific request goes here.]
+
+          We hope this helps! If you have any more questions or would like to discuss your project in detail, please feel free to reply directly to this email.
+
+          Ready to take the next step? You can schedule a free consultation call with our team here:
+          [Link to your Calendly or Booking Page]
+
+          Best regards,
+
+          The Indocs Media Team
+          indocsmedia.onrender.com
+
+          **ADMIN SUMMARY RULES:**
+  When you generate the 'adminSummary', you MUST follow this internal memo structure. Be concise and informative.
+
+  Subject: New Lead via Macda: [User's Name] - [Topic of Interest]
+
+  Body:
+  **New Lead Captured by Macda**
+
+  * **Date:** [Current Date] // N/A
+  * **Client Name:** [User's Name]
+  * **Client Email:** [User's Email]
+  * **Primary Interest:** [Main service the user asked about]
+
+  **Key Points from Conversation:**
+  * [Summary point 1]
+  * [Summary point 2]
+  * [Summary point 3]
+
+  **Action Required:** Please follow up with the client within 24 business hours to discuss their project and provide a quote.
+  ---
+          `
         },
         ...history,
       ],
