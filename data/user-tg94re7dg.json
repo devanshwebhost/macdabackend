@@ -1,0 +1,26 @@
+[
+  {
+    "role": "user",
+    "content": "hello"
+  },
+  {
+    "role": "assistant",
+    "content": "Hello! It's nice to meet you. How can I assist you today?"
+  },
+  {
+    "role": "user",
+    "content": "my selv coco"
+  },
+  {
+    "role": "assistant",
+    "content": "Hi Coco! It's lovely to chat with you. What brings you here today? Do you have a question or a topic you'd like to discuss? I'm all ears!"
+  },
+  {
+    "role": "user",
+    "content": "can we talk in hindi "
+  },
+  {
+    "role": "assistant",
+    "content": "नमस्ते Coco! हाँ, हम हिन्दी में बात कर सकते हैं। मैं आपकी मदद के लिए तैयार हूँ। क्या आप कुछ पूछना चाहते हैं या कोई विषय पर बात करना चाहते हैं?"
+  }
+]
