@@ -55,6 +55,10 @@ const tools = [
   },
 ];
 
+app.get("/ping", (req, res) => {
+  res.json({ success: true, message: "Macda server is alive 🚀" });
+});
+
 app.post("/chat", async (req, res) => {
   const { message, userKey } = req.body;
   const userFile = path.join(dataDir, `${userKey}.json`);
