@@ -36,24 +36,42 @@ const transporter = nodemailer.createTransport({
 // ... (imports, app setup, groq, and transporter are the same)
 // ... (imports, app setup, groq, and transporter are the same)
 
+// ... (imports, app setup, etc.)
+
 const tools = [
   {
     type: "function",
     function: {
       name: "send_email_to_client",
-      description: "Sends a follow-up email to a potential client who has provided their email and explicitly asked to be contacted.",
+      description: "Sends a follow-up email to a potential client and a separate internal summary to the Indocs Media team.",
       parameters: {
         type: "object",
         properties: {
-          email: { type: "string", description: "The client's email address." },
-          subject: { type: "string", description: "A compelling subject line for the email." },
-          message: { type: "string", description: "A personalized message for the body of the email." },
+          email: { 
+            type: "string", 
+            description: "The client's email address." 
+          },
+          subject: { 
+            type: "string", 
+            description: "A compelling subject line for the email to the client." 
+          },
+          // CHANGED: Replaced 'message' with two specific fields
+          clientMessage: {
+            type: "string",
+            description: "A friendly, personalized message to be sent to the client."
+          },
+          adminSummary: {
+            type: "string",
+            description: "A concise internal summary for the Indocs Media team, including the client's needs, contact info, and conversation context."
+          }
         },
-        required: ["email", "subject", "message"],
+        required: ["email", "subject", "clientMessage", "adminSummary"], // CHANGED: Updated required fields
       },
     },
   },
 ];
+
+// ... (rest of your code)
 
 app.get("/ping", (req, res) => {
   res.json({ success: true, message: "Macda server is alive 🚀" });
@@ -125,14 +143,14 @@ app.post("/chat", async (req, res) => {
             from: '"Macda AI" <indocsmedia@gmail.com>',
             to: "indocsmedia@gmail.com",
             subject: `New Lead from Macda: ${args.email}`,
-            text: `Client is interested!\nEmail: ${args.email}\n\nAI's suggested message:\n${args.message}`,
+            text: `Client is interested!\nEmail: ${args.email}\n\nAI's suggested message:\n${args.adminSummary}`,
           });
 
           await transporter.sendMail({
             from: '"Macda - Indocs Media" <indocsmedia@gmail.com>',
             to: args.email,
             subject: args.subject,
-            text: args.message,
+            text: args.clientMessage,
           });
 
           // ✅ Report SUCCESS back to the AI
