@@ -41,26 +41,33 @@ const tools = [
     type: "function",
     function: {
       name: "send_email_to_client",
-      description: "Sends a follow-up email...",
+      description:
+        "Sends a follow-up email to a potential client and a separate internal summary to the Indocs Media team.",
       parameters: {
         type: "object",
         properties: {
-          userName: { type: "string", description: "The user's first name." },
-          email: { type: "string", description: "The client's email address." },
-          topic: { // NEW
-            type: "string", 
-            description: "A short topic of the user's request, e.g., 'Video Editing Services'." 
-          },
-          clientMessage: { // RENAMED for clarity
+          email: {
             type: "string",
-            description: "The detailed answer to the user's specific request. Should be plain text."
+            description: "The client's email address.",
+          },
+          subject: {
+            type: "string",
+            description:
+              "A compelling subject line for the email to the client.",
+          },
+          // CHANGED: Replaced 'message' with two specific fields
+          clientMessage: {
+            type: "string",
+            description:
+              "A friendly, personalized message to be sent to the client.",
           },
           adminSummary: {
             type: "string",
-            description: "A concise internal summary for the Indocs Media team."
-          }
+            description:
+              "A concise internal summary for the Indocs Media team, including the client's needs, contact info, and conversation context.",
+          },
         },
-        required: ["userName", "email", "topic", "clientMessage", "adminSummary"],
+        required: ["email", "subject", "clientMessage", "adminSummary"], // CHANGED: Updated required fields
       },
     },
   },
@@ -106,15 +113,28 @@ app.post("/chat", async (req, res) => {
           1.  NEVER use the tool unless the user has first provided their email address.
           2.  NEVER use the tool unless the user has *explicitly* asked for an email or confirmed they want to be contacted.
 
-           **TOOL USE RULES:**
-  When a user provides their name and email and asks for information, use the 'send_email_to_client' tool.
-  
-  - For the 'topic' parameter, provide a short summary of the user's request.
-  - For the 'clientMessage' parameter, provide ONLY the detailed, direct answer to the user's question. DO NOT include greetings or closings like 'Hi' or 'Best regards'. The HTML template will handle that.
-
           If these two conditions are met, call the tool. After the tool runs, your job is to confirm the action to the user and ask how else you can help.
           If the conditions are NOT met, simply continue the conversation.
 
+           **USER EMAIL TEMPLATE RULES:**
+          When you generate the 'clientMessage' for the tool, you MUST follow this structure exactly:
+
+          Hi [User's Name],
+
+          Thank you for your recent chat with me (Macda), our AI assistant at Indocs Media. We appreciate you reaching out to us.
+
+          Based on your conversation, here is the information you requested regarding [Topic of User's Request]:
+
+          > [Your detailed, AI-generated answer to the user's specific request goes here.]
+
+          We hope this helps! If you have any more questions or would like to discuss your project in detail, please feel free to reply directly to this email.
+
+          Ready to take the next step? You can schedule a free consultation call with our team here:
+
+          Best regards,
+
+          The Indocs Media Team
+          indocsmedia.onrender.com
 
           **ADMIN SUMMARY RULES:**
   When you generate the 'adminSummary', you MUST follow this internal memo structure. Be concise and informative.
@@ -166,46 +186,41 @@ app.post("/chat", async (req, res) => {
         });
       } else {
         try {
-        // --- 1. Read the HTML template from the file ---
-        let htmlTemplate = fs.readFileSync(path.join(process.cwd(), 'emailTemplate.html'), 'utf8');
-
-        // --- 2. Replace placeholders with dynamic content from the AI ---
-        htmlTemplate = htmlTemplate.replace('{{userName}}', args.userName);
-        htmlTemplate = htmlTemplate.replace('{{topic}}', args.topic);
-        htmlTemplate = htmlTemplate.replace('{{aiResponse}}', args.clientMessage); // Use clientMessage here
-
-        // --- 3. Send the email to the client using the HTML template ---
-        await transporter.sendMail({
-            from: '"Macda - Indocs Media" <indocsmedia@gmail.com>',
-            to: args.email,
-            subject: `Your Follow-Up from Indocs Media`, // You can make this dynamic too
-            html: htmlTemplate, // Use 'html' instead of 'text'
-        });
-
-        // --- 5. Send the plain text summary to the admin ---
-        await transporter.sendMail({
+          // If safeguards pass, send the emails
+          await transporter.sendMail({
             from: '"Macda AI" <indocsmedia@gmail.com>',
             to: "indocsmedia@gmail.com",
             subject: `New Lead from Macda: ${args.email}`,
-            text: args.adminSummary,
-        });
+            text: `Client is interested!\nEmail: ${args.email}\n\nAI's suggested message:\n${args.adminSummary}`,
+          });
 
-        // ✅ Report SUCCESS back to the AI
-        history.push({
+          await transporter.sendMail({
+            from: '"Macda - Indocs Media" <indocsmedia@gmail.com>',
+            to: args.email,
+            subject: args.subject,
+            text: args.clientMessage,
+          });
+
+          // ✅ Report SUCCESS back to the AI
+          history.push({
             role: "tool",
             tool_call_id: toolCall.id,
-            content: JSON.stringify({ success: true, message: `HTML Email successfully sent to ${args.email}` }),
-        });
-
-    } catch (emailError) {
-        console.error("Email Sending Error:", emailError);
-        // ❌ Report FAILURE back to the AI
-        history.push({
+            content: JSON.stringify({
+              success: true,
+              message: `Email successfully sent to ${args.email}`,
+            }),
+          });
+        } catch (emailError) {
+          // ❌ Report FAILURE back to the AI
+          history.push({
             role: "tool",
             tool_call_id: toolCall.id,
-            content: JSON.stringify({ success: false, error: "An internal error occurred while sending the email." }),
-        });
-    }
+            content: JSON.stringify({
+              success: false,
+              error: "An internal error occurred while sending the email.",
+            }),
+          });
+        }
       }
 
       // --- STEP 3: Second API call to get a natural language response ---
